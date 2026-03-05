@@ -102,7 +102,8 @@ const ADMIN_HTML = `<!DOCTYPE html>
         <input type="text" id="bot-token" placeholder="Telegram Token من BotFather" class="form-full" />
         <input type="text" id="bot-webhook" placeholder="n8n Webhook URL" class="form-full" />
       </div>
-      <button class="btn-primary" onclick="addBot()">حفظ وتفعيل الـ Webhook ✅</button>
+      <button class="btn-primary" id="save-btn" onclick="addBot()">حفظ وتفعيل الـ Webhook ✅</button>
+      <div id="result-box" style="display:none;margin-top:1rem;background:var(--bg);border:1px solid var(--accent);border-radius:10px;padding:.8rem 1rem;font-size:.85rem;line-height:1.6;transition:all .3s"></div>
     </div>
     <div class="section-title">// البوتات المضافة</div>
     <div id="bots-list"><div class="empty-state">جاري التحميل...</div></div>
@@ -166,15 +167,47 @@ const ADMIN_HTML = `<!DOCTYPE html>
     const token = document.getElementById("bot-token").value.trim();
     const webhookUrl = document.getElementById("bot-webhook").value.trim();
     if (!id||!token||!webhookUrl) { showToast("❌ ملي كل الحقول المطلوبة"); return; }
+
+    // تغيير زر الـ Save
+    const btn = document.getElementById("save-btn");
+    btn.textContent = "⏳ جاري التحقق...";
+    btn.disabled = true;
+
     try {
       const res = await fetch("/api/bots", { method:"POST", headers:{"Content-Type":"application/json","x-admin-token":TOKEN}, body:JSON.stringify({id,name,token,webhookUrl}) });
       const data = await res.json();
+
+      btn.textContent = "حفظ وتفعيل الـ Webhook ✅";
+      btn.disabled = false;
+
       if (data.ok) {
-        showToast("✅ البوت اتضاف والـ Webhook اتفعّل!");
+        const wh = data.webhookSet;
+        if (wh && wh.ok) {
+          showResult("✅ تم الحفظ والـ Webhook اتفعّل!", wh.description || "Webhook was set", "success");
+        } else {
+          showResult("⚠️ اتحفظ بس الـ Webhook فيه مشكلة", JSON.stringify(wh), "warning");
+        }
         ["bot-id","bot-name","bot-token","bot-webhook"].forEach(id => document.getElementById(id).value="");
         loadBots();
-      } else { showToast("❌ "+(data.error||"حصل خطأ")); }
-    } catch(err) { showToast("❌ "+err.message); }
+      } else {
+        showResult("❌ فشل الحفظ", data.error||"حصل خطأ", "error");
+      }
+    } catch(err) {
+      btn.textContent = "حفظ وتفعيل الـ Webhook ✅";
+      btn.disabled = false;
+      showResult("❌ خطأ", err.message, "error");
+    }
+  }
+
+  function showResult(title, msg, type) {
+    const colors = { success: "var(--accent)", warning: "var(--orange)", error: "var(--red)" };
+    const color = colors[type] || "var(--accent)";
+    const el = document.getElementById("result-box");
+    el.style.display = "block";
+    el.style.borderColor = color;
+    el.style.color = color;
+    el.innerHTML = \`<strong>\${title}</strong><br><span style="font-family:'IBM Plex Mono',monospace;font-size:.75rem;opacity:.8">\${msg}</span>\`;
+    setTimeout(() => { el.style.display = "none"; }, 6000);
   }
   async function deleteBot(id) {
     if (!confirm('هتحذف البوت "'+id+'"؟')) return;
