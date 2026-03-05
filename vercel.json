@@ -3,8 +3,5 @@
     "api/[[...path]].js": {
       "maxDuration": 60
     }
-  },
-  "rewrites": [
-    { "source": "/admin", "destination": "/public/admin.html" }
-  ]
+  }
 }
