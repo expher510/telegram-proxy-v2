@@ -211,7 +211,7 @@ export default async function handler(req, res) {
   // ============================================
   // Admin Panel UI
   // ============================================
-  if (path === "/admin") {
+  if (path === "/admin" || path === "/" || path === "") {
     res.setHeader("Content-Type", "text/html; charset=utf-8");
     return res.status(200).send(ADMIN_HTML);
   }
